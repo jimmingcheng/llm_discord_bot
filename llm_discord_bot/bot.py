@@ -73,30 +73,47 @@ You are in a Discord chatroom.
 Carefully heed the user's instructions.
         '''
 
-    async def on_message(self, message: Message) -> None:
-        assert self.user
+    def is_authorized_to_read_message(self, message: Message) -> bool:
+        if message.channel.id in self.fully_readable_channels():
+            return True
+        else:
+            return self.user in message.mentions
 
+    def should_reply_to_message(self, message: Message) -> bool:
         if message.author == self.user:
-            # Never respond to self, to avoid infinite loops
-            return
+            # Never reply to self, to avoid infinite loops
+            return False
 
+        if self.user in message.mentions:
+            return True
+
+        if all([
+            message.channel.id in self.monitored_channels(),
+            not message.mentions,
+            not message.author.bot,
+        ]):
+            return True
+
+        return False
+
+    async def on_message(self, message: Message) -> None:
         if not self.is_authorized_to_read_message(message):
             return
 
-        should_reply = message.channel.id in self.monitored_channels() or self.user in message.mentions
-        if not should_reply:
+        if not self.should_reply_to_message(message):
             return
 
         async with message.channel.typing():
             reply = await self.reply_to_message(message) or await self.reply_to_conversation(message)
-            await message.channel.send(reply)
+            if reply:
+                await message.channel.send(reply)
 
     async def reply_to_message(self, message: Message) -> Optional[str]:
         return await self.task_dispatcher().reply(
             self.remove_ai_mention(message.content),
         )
 
-    async def reply_to_conversation(self, message: Message) -> str:
+    async def reply_to_conversation(self, message: Message) -> Optional[str]:
         llm_convo_context = await self.get_llm_convo_context(latest_message=message)
 
         continue_convo_prompter = chatroom.ContinueConversationPrompter(
@@ -152,12 +169,6 @@ Carefully heed the user's instructions.
             messages += [thread_start_msg]
 
         return messages
-
-    def is_authorized_to_read_message(self, message: Message) -> bool:
-        if message.channel.id in self.fully_readable_channels():
-            return True
-        else:
-            return self.user in message.mentions
 
     def remove_ai_mention(self, msg_content: str) -> str:
         return re.sub(rf'<@{self.user.id}> *', '', msg_content)  # type: ignore
