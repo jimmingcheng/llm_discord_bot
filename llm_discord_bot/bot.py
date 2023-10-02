@@ -109,7 +109,7 @@ Carefully heed the user's instructions.
                 await message.channel.send(reply)
 
     async def reply_to_message(self, message: Message) -> Optional[str]:
-        return await self.task_dispatcher(message.author.id).reply(
+        return await self.task_dispatcher(str(message.author.id)).reply(
             self.remove_ai_mention(message.content),
         )
 
