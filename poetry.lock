@@ -792,13 +792,13 @@ requests = ">=2,<3"
 
 [[package]]
 name = "llm-task-handler"
-version = "1.0.0"
+version = "2.0.0"
 description = "LLM Task Handler"
 optional = false
 python-versions = "*"
 files = [
-    {file = "llm_task_handler-1.0.0-py3-none-any.whl", hash = "sha256:ddcc82b4826ca7412ff4c2a893ecccbae682d17494f92255d4b4c0a5a5ed5a68"},
-    {file = "llm_task_handler-1.0.0.tar.gz", hash = "sha256:a0ee78ed0765fcb568eb79b439f8ae461ed7bcb41379a420d71b3d1cceae8052"},
+    {file = "llm_task_handler-2.0.0-py3-none-any.whl", hash = "sha256:23b0cc3d163785e12d843779aefe6109587edbb7d4ea4f91498f30597a3aeb6d"},
+    {file = "llm_task_handler-2.0.0.tar.gz", hash = "sha256:b80d8e8ca66539610186810a818559877561d402758b1313389249834a62d4b9"},
 ]
 
 [package.dependencies]
@@ -1769,4 +1769,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "135b584cbc83d866444eec5b646945712bf65711a4ac7c23f007b5ed07f1f2bf"
+content-hash = "1a020f4184449b8da8ec95e0bdf1dfb49762b174486b3c043a2b2a22227867f5"

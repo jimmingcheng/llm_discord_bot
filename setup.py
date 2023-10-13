@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='llm_discord_bot',
-    version='1.0.4',
+    version='2.0.0',
     description='LLM Discord Bot',
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -18,6 +18,7 @@ setup(
         'discord',
         'langchain',
         'llm_task_handler',
+        'pyyaml',
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
