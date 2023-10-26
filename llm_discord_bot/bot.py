@@ -110,8 +110,8 @@ Carefully heed the user's instructions.
 
         async with message.channel.typing():
             reply = await self.reply(message)
-            if reply:
-                await message.channel.send(reply)
+        if reply:
+            await message.channel.send(reply)
 
     async def reply(self, message: Message) -> Optional[str]:
         return await self.reply_to_message(message) or await self.reply_to_conversation(message)
