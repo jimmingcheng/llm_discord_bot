@@ -64,6 +64,12 @@ class LLMDiscordBot(commands.Bot, ABC):
             max_tokens=completion_tokens,
         )
 
+    def conversation_history_duration_s(self) -> int:
+        return 60 * 60 * 24
+
+    def conversation_reset_string(self) -> str:
+        return '👋'
+
     def conversation_completion_tokens(self) -> int:
         return 400
 
@@ -114,16 +120,22 @@ Carefully heed the user's instructions.
             await message.channel.send(reply)
 
     async def reply(self, message: Message) -> Optional[str]:
+        if message.content.endswith(self.conversation_reset_string()):
+            return self.conversation_reset_string()
+
         return await self.reply_to_message(message) or await self.reply_to_conversation(message)
 
     async def reply_to_message(self, message: Message) -> Optional[str]:
         return await self.prompt_task_dispatcher(str(message.author.id)).reply(
             self.remove_ai_mention(message.content),
-            progress_reply_func=lambda reply: message.channel.send(reply),
+            progress_message_func=lambda *args, **kwargs: message.channel.send(*args, **kwargs),
         )
 
     async def reply_to_conversation(self, message: Message) -> Optional[str]:
-        llm_convo_context = await self.get_llm_convo_context(latest_message=message)
+        llm_convo_context = await self.get_llm_convo_context(
+            latest_message=message,
+            min_timestamp=arrow.now().shift(seconds=-self.conversation_history_duration_s()).int_timestamp,
+        )
 
         chat_model = self.conversation_llm_model(llm_convo_context)
 
@@ -135,21 +147,30 @@ Carefully heed the user's instructions.
 
         return await self.conversation_task_dispatcher(str(message.author.id)).reply(
             convo.to_yaml(),
-            progress_reply_func=lambda reply: message.channel.send(reply),
+            progress_message_func=lambda *args, **kwargs: message.channel.send(*args, **kwargs),
         )
 
     async def get_llm_convo_context(
         self,
         latest_message: Message,
+        min_timestamp: int = 0,
     ) -> list[ChatroomMessage]:
         # Messages are ordered newest to oldest
         discord_messages = await self.preceding_messages(latest_message)
 
         chatroom_messages: List[ChatroomMessage] = []
         for msg in discord_messages:
+            reset_str = self.conversation_reset_string()
+            if msg.author == self.user and msg.content.endswith(reset_str):
+                break
+
+            msg_timestamp = int(msg.created_at.timestamp())
+            if msg_timestamp < min_timestamp:
+                break
+
             reply_reference = msg.reference.resolved if msg.reference and type(msg.reference.resolved) is Message else None
 
-            chatroom_msg = ChatroomMessage(role=str(msg.author.id), content=msg.content, timestamp=int(msg.created_at.timestamp()))
+            chatroom_msg = ChatroomMessage(role=str(msg.author.id), content=msg.content, timestamp=msg_timestamp)
 
             if reply_reference:
                 chatroom_messages += [ChatMessage(role=str(reply_reference.author.id), content=reply_reference.content)]
